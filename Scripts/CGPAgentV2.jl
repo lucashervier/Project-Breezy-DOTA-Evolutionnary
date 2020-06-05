@@ -6,44 +6,7 @@ using CartesianGeneticProgramming
 using Cambrian
 using ArgParse
 using Sockets
-include("Scripts/Evaluate.jl")
 
-## Necessary settings
-s = ArgParseSettings()
-@add_arg_table! s begin
-    "--breezyIp"
-    help = "breezy server IP adress"
-    default = "127.0.0.1"
-    "--breezyPort"
-    help = "breezy server port number"
-    default = "8085"
-    "--agentIp"
-    help = "agent server IP adress"
-    default = "127.0.0.1"
-    "--agentPort"
-    help = "agent server port number"
-    default = "8086"
-    "--startData"
-    help = "the initial number of games launch when the agent is started"
-    arg_type = Dict{String}{Any}
-    default = Dict(
-                "agent"=> "Sample Random Agent",
-                "size"=> 1
-            )
-    "--cfg"
-    help = "configuration script"
-    default = "Config/CGPconfig.yaml"
-end
-
-
-args = parse_args(ARGS, s)
-cfg = get_config(args["cfg"])
-
-# add to cfg the number of input(i.e nb of feature) and output
-cfg["n_in"] = 310
-cfg["n_out"] = 30
-
-## Modified service functions
 """
 Helper function to get content passed with http request.
 """
@@ -62,9 +25,8 @@ end
 
 """
 ServerHandler used for handling the different service:
-- starting a new set of games
-- start a game in existing set of games
 - getting features and returning action.
+- close the server when a game is over
 """
 function ServerHandler(request::HTTP.Request)
     global last_features
@@ -116,8 +78,13 @@ This function allow us to play one game and to get the fitness score
 """
 function PlayDota() 
     global server
+    global breezyIp
+    global breezyPort
+    global agentIp
+    global agentPort
+
     close(server)
-    server = Sockets.listen(Sockets.InetAddr(parse(IPAddr,args["agentIp"]),parse(Int64,args["agentPort"])))
+    server = Sockets.listen(Sockets.InetAddr(parse(IPAddr,agentIp),parse(Int64,agentPort)))
     startUrl = "http://$breezyIp:$breezyPort/run/"
     # initialize a first set of games
     response = HTTP.post(startUrl, ["Content-Type" => "application/json"], JSON.json(startData))
@@ -128,22 +95,3 @@ function PlayDota()
         return fitness(last_features)
     end
 end
-
-### Main Loop ###
-"""
-Declare variables global that you want the agent server to have access to.
-"""
-global breezyIp
-global breezyPort
-global startData
-global last_features
-global server
-
-breezyIp = args["breezyIp"]
-breezyPort = args["breezyPort"]
-startData = args["startData"]
-# to be able to evaluate the fitness
-last_features = Dict("no_lastfeat_fornow"=>0)
-server = Sockets.listen(Sockets.InetAddr(parse(IPAddr,args["agentIp"]),parse(Int64,args["agentPort"])))
-    
-
