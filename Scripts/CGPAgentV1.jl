@@ -2,12 +2,46 @@
 using HTTP
 using Random
 using JSON
+using CartesianGeneticProgramming
+using Cambrian
+using ArgParse
+using Sockets
+include("Scripts/Evaluate.jl")
 
-## Necessary adresses to post/get requests
-opts = Dict("agentIp"=>"127.0.0.1",
-       "agentPort"=>"8086",
-       "breezyIp"=>"127.0.0.1",
-       "breezyPort"=>"8085") 
+## Necessary settings
+s = ArgParseSettings()
+@add_arg_table! s begin
+    "--breezyIp"
+    help = "breezy server IP adress"
+    default = "127.0.0.1"
+    "--breezyPort"
+    help = "breezy server port number"
+    default = "8085"
+    "--agentIp"
+    help = "agent server IP adress"
+    default = "127.0.0.1"
+    "--agentPort"
+    help = "agent server port number"
+    default = "8086"
+    "--startData"
+    help = "the initial number of games launch when the agent is started"
+    arg_type = Dict{String}{Any}
+    default = Dict(
+                "agent"=> "Sample Random Agent",
+                "size"=> 5
+            )
+    "--cfg"
+    help = "configuration script"
+    default = "Config/CGPconfig.yaml"
+end
+
+
+args = parse_args(ARGS, s)
+cfg = get_config(args["cfg"])
+
+# add to cfg the number of input(i.e nb of feature) and output
+cfg["n_in"] = 310
+cfg["n_out"] = 30
 
 ## Modified service functions
 """
@@ -33,9 +67,9 @@ ServerHandler used for handling the different service:
 - getting features and returning action.
 """
 function ServerHandler(request::HTTP.Request)
+    global last_features
     path = HTTP.URIs.splitpath(request.target)
     println("Path is: $path")
-
     # path is either an array containing "update" or nothing
     # so the following line means "if there is an update"
     if (size(path)[1] != 0) 
@@ -45,11 +79,11 @@ function ServerHandler(request::HTTP.Request)
         
         global breezyIp
         global breezyPort
-        
-        println("Game done.")
+
         content = GetContent(request)
         rundata = JSON.json(content)
-        
+        println(fitness(last_features))
+        gameOver = true
         # webhook to start new game in existing set of games
         if (occursin("webhook",rundata))
             """
@@ -93,7 +127,7 @@ function ServerHandler(request::HTTP.Request)
         content = GetContent(request)       
         features = JSON.json(content)
         println(features)
-    
+        last_features = content
         """
         Agent code to determine action from features would go here.
         """
@@ -110,21 +144,20 @@ Declare variables global that you want the agent server to have access to.
 global breezyIp
 global breezyPort
 global startData
+global last_features
 
-breezyIp = opts["breezyIp"]
-breezyPort = opts["breezyPort"]
-# change here if you want
-startData = Dict(
-                "agent"=> "Sample Random Agent",
-                "size"=> 5
-            )
+breezyIp = args["breezyIp"]
+breezyPort = args["breezyPort"]
+startData = args["startData"]
+# to be able to evaluate the fitness
+last_features = Dict("no_lastfeat_fornow"=>0)
 
 # build url to dota 2 breezy server
 startUrl = "http://$breezyIp:$breezyPort/run/"
 # initialize a first set of games
 response = HTTP.post(startUrl, ["Content-Type" => "application/json"], JSON.json(startData))
 # will run until forced termination
-HTTP.serve(ServerHandler,opts["agentIp"],parse(Int64,opts["agentPort"]))
+HTTP.serve(ServerHandler,args["agentIp"],parse(Int64,args["agentPort"]))
 
 
 	
