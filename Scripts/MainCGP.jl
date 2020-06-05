@@ -6,8 +6,8 @@ using CartesianGeneticProgramming
 using Cambrian
 using ArgParse
 using Sockets
-include("Evaluate.jl")
-include("CGPAgentV2.jl")
+include("Scripts/Evaluate.jl")
+include("Scripts/CGPAgentV2.jl")
 
 ## Settings
 ## Necessary settings
@@ -64,8 +64,9 @@ agentPort = args["agentPort"]
 startData = args["startData"]
 # to be able to evaluate the fitness
 last_features = Dict("no_lastfeat_fornow"=>0)
-server = Sockets.listen(Sockets.InetAddr(parse(IPAddr,args["agentIp"]),parse(Int64,args["agentPort"])))
-    
+# the server will be reinitialize when playing Dota
+server = "whatever"
+
 # test of the PlayDota function
 fitnesses = []
 for i in 1:3

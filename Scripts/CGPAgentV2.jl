@@ -29,11 +29,11 @@ ServerHandler used for handling the different service:
 - close the server when a game is over
 """
 function ServerHandler(request::HTTP.Request)
+    
     global last_features
     path = HTTP.URIs.splitpath(request.target)
     println("Path is: $path")
-    # path is either an array containing "update" or nothing
-    # so the following line means "if there is an update"
+    # path is either an array containing "update" or nothing so the following line means "if there is an update"
     if (size(path)[1] != 0) 
         """
         Update route is called, game finished.
@@ -46,14 +46,17 @@ function ServerHandler(request::HTTP.Request)
         println("Game done.")
         content = GetContent(request)
         rundata = JSON.json(content)
-        println("Fitness from Handler: $(fitness(last_features))")
-        # close the communication
+        println("Fitness: $(fitness(last_features))")
+        """
+        Since the Game is over we want to close the server
+        """
+        # closing the server generate an error, in order to keep the code running we use a try & catch
         try
             close(server)
         catch e
             return HTTP.post(404,JSON.json(Dict("socket closed"=>"0")))
         end
-    else # relay path gives features from current game to agent
+    else 
         """
         Relay route is called, gives features from the game for the agent.
         """
@@ -68,7 +71,7 @@ function ServerHandler(request::HTTP.Request)
         Agent code to determine action from features would go here.
         """
         action = Random.rand(0:29) # just random action for this example
-        println(action)
+        println("Action made: $action")
         PostResponse(Dict("actionCode"=>action))
     end
 end
@@ -83,14 +86,16 @@ function PlayDota()
     global agentIp
     global agentPort
 
-    close(server)
+    # initialize the server 
     server = Sockets.listen(Sockets.InetAddr(parse(IPAddr,agentIp),parse(Int64,agentPort)))
+    # the url we need to trigger to start a game
     startUrl = "http://$breezyIp:$breezyPort/run/"
-    # initialize a first set of games
+    # initialize game
     response = HTTP.post(startUrl, ["Content-Type" => "application/json"], JSON.json(startData))
-    # will run the game until it is over
+    # will run the game until it is over, when it is over there is error because of the server closure
     try
         HTTP.serve(ServerHandler,args["agentIp"],parse(Int64,args["agentPort"]);server=server)
+    # when there is the error we know the game is over and we can return the fitness
     catch e
         return fitness(last_features)
     end
