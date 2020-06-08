@@ -6,8 +6,9 @@ using CartesianGeneticProgramming
 using Cambrian
 using ArgParse
 using Sockets
+using Formatting
 include("Scripts/Evaluate.jl")
-include("Scripts/CGPAgentV2.jl")
+include("Scripts/CGPAgentV0.jl")
 
 ## Settings
 ## Necessary settings
@@ -34,7 +35,7 @@ s = ArgParseSettings()
             )
     "--cfg"
     help = "configuration script"
-    default = "Config/CGPconfig.yaml"
+    default = "Config/CGPconfigV0.yaml"
 end
 
 
@@ -44,6 +45,8 @@ cfg = get_config(args["cfg"])
 # add to cfg the number of input(i.e nb of feature) and output
 cfg["n_in"] = 310
 cfg["n_out"] = 30
+
+cfg["n_game"] = 0
 
 """
 Declare variables global that you want the agent server to have access to.
@@ -55,7 +58,7 @@ global agentPort
 global startData
 global last_features
 global server
-
+global individual
 
 breezyIp = args["breezyIp"]
 breezyPort = args["breezyPort"]
@@ -66,11 +69,19 @@ startData = args["startData"]
 last_features = Dict("no_lastfeat_fornow"=>0)
 # the server will be reinitialize when playing Dota
 server = "whatever"
+# 
+individual = "not_initialized"
+# # test of the PlayDota function
+# fitnesses = []
+# for i in 1:3
+#     fit = PlayDota()
+#     push!(fitnesses,fit)
+# end
+# println(fitnesses)
 
-# test of the PlayDota function
-fitnesses = []
-for i in 1:3
-    fit = PlayDota()
-    push!(fitnesses,fit)
-end
-println(fitnesses)
+e = Cambrian.Evolution(CGPInd, cfg;
+                     populate=Populate,
+                     evaluate=Evaluate)
+Cambrian.run!(e)
+best = sort(e.population)[end]
+println("Final fitness: ", best.fitness[1])

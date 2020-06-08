@@ -1,12 +1,3 @@
-## Import necessary package
-using HTTP
-using Random
-using JSON
-using CartesianGeneticProgramming
-using Cambrian
-using ArgParse
-using Sockets
-
 """
 Helper function to get content passed with http request.
 """
@@ -31,6 +22,8 @@ ServerHandler used for handling the different service:
 function ServerHandler(request::HTTP.Request)
     
     global last_features
+    global individual
+
     path = HTTP.URIs.splitpath(request.target)
     println("Path is: $path")
     # path is either an array containing "update" or nothing so the following line means "if there is an update"
@@ -44,9 +37,10 @@ function ServerHandler(request::HTTP.Request)
         global server
 
         println("Game done.")
+        cfg["n_game"] += 1
         content = GetContent(request)
         rundata = JSON.json(content)
-        println("Fitness: $(fitness(last_features))")
+        println("Fitness: $(Fitness(last_features))")
         """
         Since the Game is over we want to close the server
         """
@@ -67,25 +61,30 @@ function ServerHandler(request::HTTP.Request)
         features = JSON.json(content)
         println(features)
         last_features = content
+        # you need this conversion to call process
+        last_features = convert(Array{Float64},last_features)
         """
-        Agent code to determine action from features would go here.
+        Agent code to determine action from features.
         """
-        action = Random.rand(0:29) # just random action for this example
+        action = argmax(process(individual, last_features))-1 # julia array start at 1 but breezy server is python so you need the "-1"
         println("Action made: $action")
         PostResponse(Dict("actionCode"=>action))
     end
 end
 
 """
-This function allow us to play one game and to get the fitness score 
+This function allow us to play one game and to get the fitness score of one individual
 """
-function PlayDota() 
+function PlayDota(ind::CGPInd) 
     global server
     global breezyIp
     global breezyPort
     global agentIp
     global agentPort
+    global individual
 
+    # set the global variable (the one Handler can manage) to the individual you want to evaluate
+    individual = ind
     # initialize the server 
     server = Sockets.listen(Sockets.InetAddr(parse(IPAddr,agentIp),parse(Int64,agentPort)))
     # the url we need to trigger to start a game
@@ -97,6 +96,24 @@ function PlayDota()
         HTTP.serve(ServerHandler,args["agentIp"],parse(Int64,args["agentPort"]);server=server)
     # when there is the error we know the game is over and we can return the fitness
     catch e
-        return fitness(last_features)
+        [Fitness(last_features)]
     end
+end
+
+"""
+This function is the one generating population  
+"""
+function Populate(evo::Cambrian.Evolution)
+    mutation = i::CGPInd->goldman_mutate(cfg, i)
+    Cambrian.oneplus_populate!(evo; mutation=mutation, reset_expert=true)
+end
+
+"""
+This function is the one that allow us to evaluate an individual 
+"""
+function Evaluate(evo::Cambrian.Evolution)
+    # define the fitness function
+    fit = i::CGPInd->PlayDota(i)
+    Cambrian.fitness_evaluate!(evo; fitness=fit)
+    evo.text = Formatting.format("{1:e}", cfg["n_game"])
 end
