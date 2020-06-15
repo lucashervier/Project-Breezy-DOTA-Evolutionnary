@@ -1,6 +1,6 @@
 # we import the list of our features into a dict to map array indexes
 const FEATURES_MAP = JSON.parsefile("features_list2.json")
-const TIME_TO_KILL = Dict(180.0=>1,300.0=>2,420.0=>3) 
+const TIME_TO_KILL = Dict(180.0=>1,300.0=>2,420.0=>5) 
 
 """
 Helper function to get the fitness whatever agent you are using. For now,
@@ -12,14 +12,14 @@ function Fitness(lastState::Array{Float64}{1})
 	return gold
 end
 
-function Fitness1(lastState::Array{Float64}{1})
+function Fitness1(lastState::Array{Float64}{1},nbKill::Int64,nbDeath::Int64,earlyPenalty::Int64)
 	netWorth = lastState[FEATURES_MAP["net worth"]+1]
 	lastHits = lastState[FEATURES_MAP["last hits"]+1]
 	denies = lastState[FEATURES_MAP["last hits"]+1]
 	towerHealth = lastState[FEATURES_MAP["bad tower health"]+1]
 	maxTowerHealth = lastState[FEATURES_MAP["bad tower max health"]+1]
 	ratioTower = (maxTowerHealth-towerHealth)/maxTowerHealth
-	reward = netWorth + 100*lastHits + 100*denies + 2000*ratioTower
+	reward = netWorth + 100*lastHits + 100*denies + 2000*ratioTower + 1000*nbKill - 250*nbDeath - 500*earlyPenalty
 	# reward = netWorth + 100*lastHits + 100*denies + 400*trunc(ratioTower/0.2)
 	return reward 
 end
@@ -36,4 +36,28 @@ function EarlyStop(lastState::Array{Float64}{1})
 		end
 	end
 	return false
+end
+
+"""
+Function to save a CGP Individual
+"""
+function SaveInd(ind::Individual;name::String="None")
+	saveFile = JSON.json(String(ind))
+	if (name=="None")
+		fileName = Dates.now()
+		fileName = Dates.format(fileName, "yyyy-mm-dd-HH-MM")
+	else
+		fileName = name
+	end
+	open("best/$fileName.json","w") do f
+		write(f,saveFile)
+	end 
+end
+
+"""
+Function to load a CGP Individual
+"""
+function LoadInd(path::String)
+	indInfo = JSON.parsefile(path)
+	return CGPInd(cfg,indInfo)
 end

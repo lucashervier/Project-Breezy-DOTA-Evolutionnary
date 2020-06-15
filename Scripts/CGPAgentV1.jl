@@ -25,6 +25,9 @@ function ServerHandler(request::HTTP.Request)
     global breezyIp
     global breezyPort 
     global server
+    global nbKill
+    global nbDeath
+    global earlyPenalty
 
     path = HTTP.URIs.splitpath(request.target)
     println("Path is: $path")
@@ -37,8 +40,15 @@ function ServerHandler(request::HTTP.Request)
         println("Game done.")
         cfg["n_game"] += 1
         content = GetContent(request)
-        rundata = JSON.json(content)
-        println("Fitness: $(Fitness1(last_features))")
+        # println(content)
+        if (content["status"] == "DONE")
+            nbDeath = content["deaths"]
+            nbKill = content["radiantKills"]
+        elseif (content["status"] == "CANCELED") # i.e EarlyStop
+            earlyPenalty = 1
+        end
+
+        println("Fitness: $(Fitness1(last_features,nbKill,nbDeath,earlyPenalty))")
         """
         Since the Game is over we want to close the server
         """
@@ -72,7 +82,7 @@ function ServerHandler(request::HTTP.Request)
             stopUrl = "http://$breezyIp:$breezyPort/run/active"
             response = HTTP.delete(stopUrl)
             println(response)
-            PostResponse(Dict("Early"=>"stop"))
+
         else
             """
             Agent code to determine action from features.
@@ -94,6 +104,13 @@ function PlayDota(ind::CGPInd)
     global agentIp
     global agentPort
     global individual
+    global nbKill
+    global nbDeath
+    global earlyPenalty
+    
+    nbDeath = 0
+    nbKill = 0
+    earlyPenalty = 0
 
     # set the global variable (the one Handler can manage) to the individual you want to evaluate
     individual = ind
@@ -108,7 +125,7 @@ function PlayDota(ind::CGPInd)
         HTTP.serve(ServerHandler,args["agentIp"],parse(Int64,args["agentPort"]);server=server)
     # when there is the error we know the game is over and we can return the fitness
     catch e
-        [Fitness1(last_features)]
+        [Fitness1(last_features,nbKill,nbDeath,earlyPenalty)]
     end
 end
 
