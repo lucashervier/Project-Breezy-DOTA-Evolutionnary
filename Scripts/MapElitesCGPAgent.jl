@@ -182,7 +182,7 @@ function MapelitesDotaStep!(e::Evolution,
 
     # the MappingArray is at first empty and is filled when evaluate is called, it will be used to get MapElites coordinates
     global MappingArray
-    
+
     e.gen += 1
     if (e.gen == 1)
         Cambrian.fitness_evaluate!(e;fitness=evaluate)
@@ -228,6 +228,8 @@ function MapelitesDotaStep!(e::Evolution,
     end
     if ((e.cfg["save_gen"] > 0) && mod(e.gen, e.cfg["save_gen"]) == 0)
         Cambrian.save_gen(e)
+        mapPath = "map/$(e.id)/$(e.gen)"
+        save_map(map_el,mapPath)
     end
 end
 

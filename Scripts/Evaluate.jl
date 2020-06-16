@@ -116,3 +116,57 @@ function GetTowerRatio(lastState::Array{Float64})
 	ratioTower = (maxTowerHealth-towerHealth)/maxTowerHealth
 	return ratioTower
 end
+
+"""
+Helper functions to load and save map
+"""
+function save_map(map_el::MAPElites.MapElites,path::String;name::String="None")
+	mkpath(path)
+	dict = Dict("feature_dimension"=>mapel.feature_dimension,
+       "grid_mesh"=>mapel.grid_mesh,
+       "solutions"=>Dict((key[1]-1)*mapel.grid_mesh+(key[2]-1) => String(value) for (key,value) in mapel.solutions.data),
+       "performances"=>Dict((key[1]-1)*mapel.grid_mesh+(key[2]-1) => value for (key,value) in mapel.performances.data)
+    )
+	saveFile = JSON.json(dict)
+	if (name=="None")
+		fileName = Dates.now()
+		fileName = Dates.format(fileName, "yyyy-mm-dd-HH-MM")
+	else
+		fileName = name
+	end
+	open("$path/$fileName.json","w") do f
+		write(f,saveFile)
+	end
+end
+
+function load_map(path::String)
+	mapInfo = JSON.parsefile(path)
+	feature_dimension = mapInfo["feature_dimension"]
+	grid_mesh = mapInfo["grid_mesh"]
+
+	mapel = MAPElites.MapElites(feature_dimension,grid_mesh)
+
+	solutions_data = mapInfo["solutions"]
+	solutions_data = Dict(parse(Int,key) =>CGPInd(cfg,value) for (key,value) in solutions_data)
+	solutions_data = Dict(intToTuple(key,grid_mesh) => value for (key,value) in solutions_data)
+
+    performances_data = mapInfo["performances"]
+    performances_data = Dict(parse(Int,key) => convert(Array{Float64},value) for (key,value) in performances_data)
+	performances_data = Dict(intToTuple(key,grid_mesh) => value for (key,value) in performances_data)
+
+	for (key,value) in solutions_data
+		mapel.solutions.data[key] = value
+	end
+
+	for (key,value) in performances_data
+		mapel.performances.data[key] = value
+	end
+	return mapel
+end
+
+# supposedly f_dim=2
+function intToTuple(int::Int64,grid_mesh::Int64)
+	x = 1 + div(int,grid_mesh)
+	y = 1 + rem(int,grid_mesh)
+	return (x,y)
+end

@@ -9,8 +9,8 @@ using ArgParse
 using Sockets
 using Formatting
 using Dates
-include("Scripts/Evaluate.jl")
 include("MAPElites/src/MapElites.jl")
+include("Scripts/Evaluate.jl")
 include("Scripts/MapElitesCGPAgent.jl")
 
 
