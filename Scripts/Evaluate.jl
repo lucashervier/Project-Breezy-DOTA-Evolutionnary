@@ -89,3 +89,30 @@ function ChangeId(e::Evolution;name::String="None")
 	end
 	e.id = id
 end
+
+"""
+Helper function to estimate the damage made to the opponent champion
+"""
+function EstimateDamage(oldLastState::Array{Float64},lastState::Array{Float64})
+	if length(oldLastState) != 1
+		deltaTime = lastState[FEATURES_MAP["dota time"]+1] - oldLastState[FEATURES_MAP["dota time"]+1]
+		if ((lastState[FEATURES_MAP["dota time"]+1] - lastState[FEATURES_MAP["last attack time"]+1])<=deltaTime)
+			healthOppRegen = lastState[FEATURES_MAP["opp health regen"]+1]
+			oppHealthCurrent = lastState[FEATURES_MAP["opp health"]+1]
+			oppHealthOld = oldLastState[FEATURES_MAP["opp health"]+1]
+			damage = max(0,oppHealthOld + deltaTime*healthOppRegen - oppHealthCurrent)
+			return damage
+		end
+	end
+	return 0
+end
+
+"""
+Function to get the final health ratio of the opponent tower
+"""
+function GetTowerRatio(lastState::Array{Float64})
+	towerHealth = lastState[FEATURES_MAP["bad tower health"]+1]
+	maxTowerHealth = lastState[FEATURES_MAP["bad tower max health"]+1]
+	ratioTower = (maxTowerHealth-towerHealth)/maxTowerHealth
+	return ratioTower
+end
