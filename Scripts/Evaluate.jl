@@ -1,10 +1,9 @@
 # we import the list of our features into a dict to map array indexes
 const FEATURES_MAP = JSON.parsefile("features_list2.json")
-const TIME_TO_KILL = Dict(180.0=>1,300.0=>2,420.0=>5) 
+const TIME_TO_KILL = Dict(180.0=>1,300.0=>2,420.0=>5)
 
 """
-Helper function to get the fitness whatever agent you are using. For now,
-the fitness is only the amount of gold you have at the end of the game
+Helper functions to get the fitness whatever agent you are using.
 """
 function Fitness(lastState::Array{Float64}{1})
 	# array index in Julia start at 1
@@ -21,7 +20,7 @@ function Fitness1(lastState::Array{Float64}{1},nbKill::Int64,nbDeath::Int64,earl
 	ratioTower = (maxTowerHealth-towerHealth)/maxTowerHealth
 	reward = netWorth + 100*lastHits + 100*denies + 2000*ratioTower + 1000*nbKill - 250*nbDeath - 500*earlyPenalty
 	# reward = netWorth + 100*lastHits + 100*denies + 400*trunc(ratioTower/0.2)
-	return reward 
+	return reward
 end
 
 """
@@ -51,7 +50,7 @@ function SaveInd(ind::Individual;name::String="None")
 	end
 	open("best/$fileName.json","w") do f
 		write(f,saveFile)
-	end 
+	end
 end
 
 """
@@ -60,4 +59,33 @@ Function to load a CGP Individual
 function LoadInd(path::String)
 	indInfo = JSON.parsefile(path)
 	return CGPInd(cfg,indInfo)
+end
+
+"""
+Function to load an entire population from a gen folder.
+The evolution need to be initialized first.
+"""
+function LoadGen(e::Evolution, path::String)
+	individualNameList = readdir("gens/$path")
+	individualList = Cambrian.Individual[]
+	for i in eachindex(individualNameList)
+		indString = read("gens/$path/$(individualNameList[i])", String)
+		ind = CGPInd(cfg,indString)
+		push!(individualList,ind)
+	end
+	e.population = individualList
+end
+
+"""
+Function to change the evolution id
+"""
+function ChangeId(e::Evolution;name::String="None")
+	if (name == "None")
+		id = Dates.now()
+		id = Dates.format(id, "dd-mm-yyyy-HH-MM")
+		id = "GenerationsFrom-$id"
+	else
+		id = name
+	end
+	e.id = id
 end

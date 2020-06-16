@@ -8,6 +8,7 @@ using Cambrian
 using ArgParse
 using Sockets
 using Formatting
+using Dates
 include("Scripts/Evaluate.jl")
 include("Scripts/CGPAgentV1.jl")
 
@@ -60,6 +61,9 @@ global startData
 global last_features
 global server
 global individual
+global nbKill
+global nbDeath
+global earlyPenalty
 
 breezyIp = args["breezyIp"]
 breezyPort = args["breezyPort"]
@@ -70,19 +74,19 @@ startData = args["startData"]
 last_features = Dict("no_lastfeat_fornow"=>0)
 # the server will be reinitialize when playing Dota
 server = "whatever"
-# 
+#
 individual = "not_initialized"
-# # test of the PlayDota function
-# fitnesses = []
-# for i in 1:3
-#     fit = PlayDota()
-#     push!(fitnesses,fit)
-# end
-# println(fitnesses)
+#
+nbKill = 0
+nbDeath = 0
+earlyPenalty = 0
+
+## MAIN ###
 
 e = Cambrian.Evolution(CGPInd, cfg;
                      populate=Populate,
                      evaluate=Evaluate)
+ChangeId(e)
 Cambrian.run!(e)
 best = sort(e.population)[end]
 println("Final fitness: ", best.fitness[1])

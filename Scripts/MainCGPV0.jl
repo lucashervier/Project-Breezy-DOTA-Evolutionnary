@@ -69,7 +69,7 @@ startData = args["startData"]
 last_features = Dict("no_lastfeat_fornow"=>0)
 # the server will be reinitialize when playing Dota
 server = "whatever"
-# 
+#
 individual = "not_initialized"
 # # test of the PlayDota function
 # fitnesses = []

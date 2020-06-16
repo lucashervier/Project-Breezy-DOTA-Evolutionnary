@@ -19,11 +19,11 @@ ServerHandler used for handling the different service:
 - close the server when a game is over
 """
 function ServerHandler(request::HTTP.Request)
-    
+
     global last_features
     global individual
     global breezyIp
-    global breezyPort 
+    global breezyPort
     global server
     global nbKill
     global nbDeath
@@ -32,7 +32,7 @@ function ServerHandler(request::HTTP.Request)
     path = HTTP.URIs.splitpath(request.target)
     println("Path is: $path")
     # path is either an array containing "update" or nothing so the following line means "if there is an update"
-    if (size(path)[1] != 0) 
+    if (size(path)[1] != 0)
         """
         Update route is called, game finished.
         """
@@ -58,14 +58,14 @@ function ServerHandler(request::HTTP.Request)
         catch e
             return HTTP.post(404,JSON.json(Dict("socket closed"=>"0")))
         end
-    else 
+    else
         """
         Relay route is called, gives features from the game for the agent.
         """
-        
+
         println("Received features.")
         # get data as json, then save to list
-        content = GetContent(request)       
+        content = GetContent(request)
         features = JSON.json(content)
         println(features)
         last_features = content
@@ -97,7 +97,7 @@ end
 """
 This function allow us to play one game and to get the fitness score of one individual
 """
-function PlayDota(ind::CGPInd) 
+function PlayDota(ind::CGPInd)
     global server
     global breezyIp
     global breezyPort
@@ -107,14 +107,14 @@ function PlayDota(ind::CGPInd)
     global nbKill
     global nbDeath
     global earlyPenalty
-    
+
     nbDeath = 0
     nbKill = 0
     earlyPenalty = 0
 
     # set the global variable (the one Handler can manage) to the individual you want to evaluate
     individual = ind
-    # initialize the server 
+    # initialize the server
     server = Sockets.listen(Sockets.InetAddr(parse(IPAddr,agentIp),parse(Int64,agentPort)))
     # the url we need to trigger to start a game
     startUrl = "http://$breezyIp:$breezyPort/run/"
@@ -130,7 +130,7 @@ function PlayDota(ind::CGPInd)
 end
 
 """
-This function is the one generating population  
+This function is the one generating population
 """
 function Populate(evo::Cambrian.Evolution)
     mutation = i::CGPInd->goldman_mutate(cfg, i)
@@ -138,7 +138,7 @@ function Populate(evo::Cambrian.Evolution)
 end
 
 """
-This function is the one that allow us to evaluate an individual 
+This function is the one that allow us to evaluate an individual
 """
 function Evaluate(evo::Cambrian.Evolution)
     # define the fitness function
