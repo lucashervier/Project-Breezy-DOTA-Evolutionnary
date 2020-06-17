@@ -1,5 +1,6 @@
-cd("C:/Lucas_Hervier/Lucas_Hervier/Documents/Cours/3A/SFE/Dota_challenge/Project-Breezy-DOTA-Evolutionnary") 
-## Import necessary package
+"""
+Import necessary package
+"""
 using HTTP
 using Random
 using JSON
@@ -9,11 +10,13 @@ using ArgParse
 using Sockets
 using Formatting
 using Dates
-include("Scripts/Evaluate.jl")
+include("MAPElites/src/MapElites.jl")
+include("Scripts/Utils.jl")
 include("Scripts/CGPAgentV1.jl")
 
-## Settings
-## Necessary settings
+"""
+SETTINGS
+"""
 s = ArgParseSettings()
 @add_arg_table! s begin
     "--breezyIp"
@@ -32,7 +35,7 @@ s = ArgParseSettings()
     help = "the initial number of games launch when the agent is started"
     arg_type = Dict{String}{Any}
     default = Dict(
-                "agent"=> "Sample Random Agent",
+                "agent"=> "CGPAgentV1",
                 "size"=> 1
             )
     "--cfg"
@@ -58,7 +61,7 @@ global breezyPort
 global agentIp
 global agentPort
 global startData
-global last_features
+global lastFeatures
 global server
 global individual
 global nbKill
@@ -71,18 +74,19 @@ agentIp = args["agentIp"]
 agentPort = args["agentPort"]
 startData = args["startData"]
 # to be able to evaluate the fitness
-last_features = Dict("no_lastfeat_fornow"=>0)
+lastFeatures = []
 # the server will be reinitialize when playing Dota
 server = "whatever"
-#
+# the individual will be properly set when calling PlayDota(ind)
 individual = "not_initialized"
-#
+# initialize variables of the fitness function
 nbKill = 0
 nbDeath = 0
 earlyPenalty = 0
 
-## MAIN ###
-
+"""
+MAIN LOOP
+"""
 e = Cambrian.Evolution(CGPInd, cfg;
                      populate=Populate,
                      evaluate=Evaluate)

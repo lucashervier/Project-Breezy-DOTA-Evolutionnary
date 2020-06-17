@@ -16,6 +16,9 @@ end
 """
 ServerHandler used for handling the different service:
 - getting features and returning action.
+- getting the nbKill, nbDeath and earlyPenalty values
+- getting the ratioDamageTowerOpp, totalDamageToOpp values
+- handle early stopping
 - close the server when a game is over
 """
 function ServerHandler(request::HTTP.Request)
@@ -54,15 +57,18 @@ function ServerHandler(request::HTTP.Request)
         println("Fitness: $(Fitness1(lastFeatures,nbKill,nbDeath,earlyPenalty))")
         # now the game is over we can get the ratioDamageTowerOpp
         ratioDamageTowerOpp = GetTowerRatio(lastFeatures)
+
         """
         Since the Game is over we want to close the server
         """
+
         # closing the server generate an error, in order to keep the code running we use a try & catch
         try
             close(server)
         catch e
             return HTTP.post(404,JSON.json(Dict("socket closed"=>"0")))
         end
+
     else
         """
         Relay route is called, gives features from the game for the agent.
@@ -71,14 +77,15 @@ function ServerHandler(request::HTTP.Request)
         println("Received features.")
         # get data as json, then save to list
         content = GetContent(request)
-        features = JSON.json(content)
-        println(features)
+        # features = JSON.json(content)
+        # println(features)
         oldLastFeatures = lastFeatures
         lastFeatures = content
         # you need this conversion to call process
         lastFeatures = convert(Array{Float64},lastFeatures)
-        # From here we can get the damage made between to state
+        # from here we can get the damage made between two state
         totalDamageToOpp += EstimateDamage(oldLastFeatures,lastFeatures)
+
         if EarlyStop(lastFeatures)
             """
             EarlyStop will stopped the current game by calling the upgrade route
@@ -98,11 +105,15 @@ function ServerHandler(request::HTTP.Request)
             println("Action made: $action")
             PostResponse(Dict("actionCode"=>action))
         end
+
     end
 end
 
 """
-This function allow us to play one game and to get the fitness score of one individual
+This function allow us to:
+- play one game and to get the fitness score(as an Array for Cambrian requirements) of one individual
+- update lastFeatures, oldLastFeatures, totalDamageToOpp, ratioDamageTowerOpp corresponding to the individual
+- update nbKill, nbDeath, earlyPenalty corresponding to the game just played
 """
 function PlayDota(ind::CGPInd)
     global server
@@ -119,10 +130,10 @@ function PlayDota(ind::CGPInd)
     global totalDamageToOpp
     global ratioDamageTowerOpp
 
+    # set game variables 
     nbDeath = 0
     nbKill = 0
     earlyPenalty = 0
-
     # set the global variable (the one Handler can manage) to the individual you want to evaluate
     individual = ind
     # initialize the server
@@ -147,7 +158,9 @@ function PlayDota(ind::CGPInd)
 end
 
 """
-This function return the coordinate in the behavior space
+This function return the coordinate in the behavior space of individual.
+This is required to use MapElites. Feel free to try another characterization.
+Needs to return an Array{Int64}
 """
 function MapIndToB(mapArray)
 
@@ -171,7 +184,8 @@ function MapIndToB(mapArray)
 end
 
 """
-Modification of MapElites to adapt to DOTA2 problem
+Modification of MapElites to adapt it to DOTA2 problem
+Notes: original function in "MapElites/src/poulate_function.jl"
 """
 function MapelitesDotaStep!(e::Evolution,
                              map_el::MAPElites.MapElites,
@@ -194,13 +208,14 @@ function MapelitesDotaStep!(e::Evolution,
     else
 
         new_pop = Array{Individual}(undef,0)
-
+        # elites stay in population
         if e.cfg["n_elite"] > 0
             sort!(e.population)
             append!(new_pop,
                     e.population[(length(e.population)-e.cfg["n_elite"]+1):end])
         end
 
+        # offsprings generation append here
         for i in (e.cfg["n_elite"]+1):e.cfg["n_population"]
             p1 = MAPElites.select_random(map_el)
             child = deepcopy(p1)
@@ -216,16 +231,21 @@ function MapelitesDotaStep!(e::Evolution,
 
             push!(new_pop, child)
         end
+
         e.population = new_pop
         Cambrian.fitness_evaluate!(e;fitness=evaluate)
+        # once invidual are evaluated we can add them to the Map
         for i in eachindex(e.population)
             MAPElites.add_to_map(map_el,map_ind_to_b(MappingArray[i]),e.population[i],e.population[i].fitness)
         end
+
         MappingArray = []
     end
+
     if ((e.cfg["log_gen"] > 0) && mod(e.gen, e.cfg["log_gen"]) == 0)
         Cambrian.log_gen(e)
     end
+
     if ((e.cfg["save_gen"] > 0) && mod(e.gen, e.cfg["save_gen"]) == 0)
         Cambrian.save_gen(e)
         mapPath = "map/$(e.id)/$(e.gen)"
@@ -249,7 +269,10 @@ function MapelitesDotaRun!(e::Evolution,
 end
 
 """
-TODO
+This function make an Individual play a single game of DOTA2
+Once the game is finished it is adding behavior variables, used to get the individual coordinates in the behavor space,
+to the MappingArray.
+Return the fitness
 """
 function EvaluateMapElites(ind::Individual)
     global MappingArray

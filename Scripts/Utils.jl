@@ -19,7 +19,6 @@ function Fitness1(lastState::Array{Float64}{1},nbKill::Int64,nbDeath::Int64,earl
 	maxTowerHealth = lastState[FEATURES_MAP["bad tower max health"]+1]
 	ratioTower = (maxTowerHealth-towerHealth)/maxTowerHealth
 	reward = netWorth + 100*lastHits + 100*denies + 2000*ratioTower + 1000*nbKill - 250*nbDeath - 500*earlyPenalty
-	# reward = netWorth + 100*lastHits + 100*denies + 400*trunc(ratioTower/0.2)
 	return reward
 end
 
@@ -91,7 +90,7 @@ function ChangeId(e::Evolution;name::String="None")
 end
 
 """
-Helper function to estimate the damage made to the opponent champion
+Helper function to estimate the damage made to the opponent champion between two state
 """
 function EstimateDamage(oldLastState::Array{Float64},lastState::Array{Float64})
 	if length(oldLastState) != 1
@@ -164,7 +163,9 @@ function load_map(path::String)
 	return mapel
 end
 
-# supposedly f_dim=2
+"""
+This function take into consideration that we have a 2-dim
+"""
 function intToTuple(int::Int64,grid_mesh::Int64)
 	x = 1 + div(int,grid_mesh)
 	y = 1 + rem(int,grid_mesh)

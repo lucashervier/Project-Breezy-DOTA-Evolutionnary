@@ -1,5 +1,6 @@
-cd("C:/Lucas_Hervier/Lucas_Hervier/Documents/Cours/3A/SFE/Dota_challenge/Project-Breezy-DOTA-Evolutionnary") 
-## Import necessary package
+"""
+Import necessary package
+"""
 using HTTP
 using Random
 using JSON
@@ -10,12 +11,13 @@ using Sockets
 using Formatting
 using Dates
 include("MAPElites/src/MapElites.jl")
-include("Scripts/Evaluate.jl")
+include("Scripts/Utils.jl")
 include("Scripts/MapElitesCGPAgent.jl")
 
 
-## Settings
-## Necessary settings
+"""
+SETTINGS
+"""
 s = ArgParseSettings()
 @add_arg_table! s begin
     "--breezyIp"
@@ -51,6 +53,7 @@ cfg["n_in"] = 310
 cfg["n_out"] = 30
 
 cfg["n_game"] = 0
+
 # add to cfg the cfg of MapElites
 cfg["features_dim"] = 2
 cfg["grid_mesh"] = 50
@@ -80,28 +83,29 @@ agentIp = args["agentIp"]
 agentPort = args["agentPort"]
 startData = args["startData"]
 # to be able to evaluate the fitness
-lastFeatures = Dict("no_lastfeat_fornow"=>0)
+lastFeatures = []
 oldLastFeatures = []
 # the server will be reinitialize when playing Dota
 server = "whatever"
-#
+# the individual will be properly set when calling PlayDota(ind)
 individual = "not_initialized"
-#
+# initialize variables of the fitness function
 nbKill = 0
 nbDeath = 0
 earlyPenalty = 0
-#
+# initialize variables of the characterization function
 totalDamageToOpp = 0
 ratioDamageTowerOpp = 0
-#
 MappingArray = []
-#
+# initialize MapElites parameters
 featuresDim = cfg["features_dim"]
 gridMesh = cfg["grid_mesh"]
 # define the mutation
 mutation = i::CGPInd->goldman_mutate(cfg, i)
-## MAIN ###
 
+"""
+MAIN LOOP
+"""
 
 e = Cambrian.Evolution(CGPInd, cfg)
 ChangeId(e)

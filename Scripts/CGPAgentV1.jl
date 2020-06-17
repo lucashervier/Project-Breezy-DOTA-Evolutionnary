@@ -15,12 +15,14 @@ end
 
 """
 ServerHandler used for handling the different service:
-- getting features and returning action.
+- getting features and returning action
+- getting the nbKill, nbDeath and earlyPenalty values
+- handle early stopping
 - close the server when a game is over
 """
 function ServerHandler(request::HTTP.Request)
 
-    global last_features
+    global lastFeatures
     global individual
     global breezyIp
     global breezyPort
@@ -48,7 +50,7 @@ function ServerHandler(request::HTTP.Request)
             earlyPenalty = 1
         end
 
-        println("Fitness: $(Fitness1(last_features,nbKill,nbDeath,earlyPenalty))")
+        println("Fitness: $(Fitness1(lastFeatures,nbKill,nbDeath,earlyPenalty))")
         """
         Since the Game is over we want to close the server
         """
@@ -58,6 +60,7 @@ function ServerHandler(request::HTTP.Request)
         catch e
             return HTTP.post(404,JSON.json(Dict("socket closed"=>"0")))
         end
+
     else
         """
         Relay route is called, gives features from the game for the agent.
@@ -66,13 +69,13 @@ function ServerHandler(request::HTTP.Request)
         println("Received features.")
         # get data as json, then save to list
         content = GetContent(request)
-        features = JSON.json(content)
-        println(features)
-        last_features = content
+        # features = JSON.json(content)
+        # println(features)
+        lastFeatures = content
         # you need this conversion to call process
-        last_features = convert(Array{Float64},last_features)
+        lastFeatures = convert(Array{Float64},lastFeatures)
 
-        if EarlyStop(last_features)
+        if EarlyStop(lastFeatures)
             """
             EarlyStop will stopped the current game by calling the upgrade route
             """
@@ -87,10 +90,11 @@ function ServerHandler(request::HTTP.Request)
             """
             Agent code to determine action from features.
             """
-            action = argmax(process(individual, last_features))-1 # julia array start at 1 but breezy server is python so you need the "-1"
+            action = argmax(process(individual, lastFeatures))-1 # julia array start at 1 but breezy server is python so you need the "-1"
             println("Action made: $action")
             PostResponse(Dict("actionCode"=>action))
         end
+
     end
 end
 
@@ -107,11 +111,11 @@ function PlayDota(ind::CGPInd)
     global nbKill
     global nbDeath
     global earlyPenalty
-
+    global lastFeatures
+    # set game variables 
     nbDeath = 0
     nbKill = 0
     earlyPenalty = 0
-
     # set the global variable (the one Handler can manage) to the individual you want to evaluate
     individual = ind
     # initialize the server
@@ -120,12 +124,14 @@ function PlayDota(ind::CGPInd)
     startUrl = "http://$breezyIp:$breezyPort/run/"
     # initialize game
     response = HTTP.post(startUrl, ["Content-Type" => "application/json"], JSON.json(startData))
+    # initialize lastFeatures
+    lastFeatures = [0.0]
     # will run the game until it is over, when it is over there is error because of the server closure
     try
         HTTP.serve(ServerHandler,args["agentIp"],parse(Int64,args["agentPort"]);server=server)
     # when there is the error we know the game is over and we can return the fitness
     catch e
-        [Fitness1(last_features,nbKill,nbDeath,earlyPenalty)]
+        [Fitness1(lastFeatures,nbKill,nbDeath,earlyPenalty)]
     end
 end
 
