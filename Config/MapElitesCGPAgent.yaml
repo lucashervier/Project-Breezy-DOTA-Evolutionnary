@@ -8,15 +8,21 @@ save_gen: 5
 m_rate: 0.1
 p_crossover: 0
 # MTCGP.jl settings
-rows: 3
-columns: 100
+rows: 2
+columns: 200
 out_m_rate: 0.3
 functions:
   - f_add
   - f_subtract
   - f_mult
+  - f_div
   - f_abs
+  - f_sqrt
+  - f_pow
   - f_exp
   - f_sin
+  - f_cos
+  - f_tanh
+  - f_sqrt_xy
   - f_lt
   - f_gt
