@@ -208,6 +208,7 @@ function MapelitesDotaStep!(e::Evolution,
     else
 
         new_pop = Array{Individual}(undef,0)
+        
         # elites stay in population
         if e.cfg["n_elite"] > 0
             sort!(e.population)
@@ -215,8 +216,15 @@ function MapelitesDotaStep!(e::Evolution,
                     e.population[(length(e.population)-e.cfg["n_elite"]+1):end])
         end
 
-        # offsprings generation append here
-        for i in (e.cfg["n_elite"]+1):e.cfg["n_population"]
+        """
+        We are generating much more children than nb_population. It is in order to maximize population diversity
+        Indeed, with the help of the Dota_simulator, real evaluation is far too expensive, we simulate those 
+        children behavior and select the nb_population individuals which are the further from each other. Then
+        we evaluate, with the actual game, those individuals and add them to the map.
+        """
+        huge_new_pop = Array{Individual}(undef,0)
+        # a big offsprings generation append here
+        for i in 1:100
             p1 = MAPElites.select_random(map_el)
             child = deepcopy(p1)
 
@@ -229,7 +237,15 @@ function MapelitesDotaStep!(e::Evolution,
                 child = mutation(child)
             end
 
-            push!(new_pop, child)
+            push!(huge_new_pop, child)
+        end
+        
+        # adapt so keep_top+nb_elite=n_population
+        keep_top = e.cfg["n_population"] - e.cfg["n_elite"]
+        selected_ind = select_diverse(huge_new_pop,keep_top)
+        # we add them to the elites for next generation
+        for ind in selected_ind
+            push!(new_pop,ind)
         end
 
         e.population = new_pop

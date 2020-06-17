@@ -5,8 +5,15 @@ using Distances
 println("\n\n\n")
 
 ## Import Simulator
-pushfirst!(PyVector(pyimport("sys")."path"), "")
+path_to_Dota_Simulator = "C:\\Lucas_Hervier\\Lucas_Hervier\\Documents\\Cours\\3A\\SFE\\Dota_challenge\\Dota_Simulator"
+pushfirst!(PyVector(pyimport("sys")."path"), path_to_Dota_Simulator)
+# pushfirst!(PyVector(pyimport("sys")."path"), "")
 dotasimlib = pyimport("DOTA_simulator")
+
+"""
+This code is not of my belonging but is from the https://github.com/TemplierPaul/Dota_Simulator .
+It is just convenient to have it running from the Scripts folder
+"""
 
 function train_sim(epochs=30, batch_size=256, limit_overfit=3, name::String ="julia_cpu_test")
     # import DOTA_simulator as dotasimlib
@@ -45,21 +52,21 @@ function run_steps(sim, indiv::Individual, n_steps=100, render=true)
     actions
 end
 
-## TEST TOOLS
-mutable struct testIndiv <: Individual
-    genes::Array{Float64}
-    fitness::Array{Float64}
-end
+# ## TEST TOOLS
+# mutable struct testIndiv <: Individual
+#     genes::Array{Float64}
+#     fitness::Array{Float64}
+# end
 
-function random_test_indiv()
-    testIndiv(rand(2), [0.])
-end
+# function random_test_indiv()
+#     testIndiv(rand(2), [0.])
+# end
 
-function process(indiv::Individual, last_features::Array{Float64}=[0.])
-    a = zeros(30)
-    a[rand(1:30)] = 1
-    a
-end
+# function process(indiv::Individual, last_features::Array{Float64}=[0.])
+#     a = zeros(30)
+#     a[rand(1:30)] = 1
+#     a
+# end
 
 ## Indiv + distances to others
 mutable struct Indiv_dist

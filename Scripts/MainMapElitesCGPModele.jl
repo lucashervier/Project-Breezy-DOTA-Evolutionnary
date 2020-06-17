@@ -1,3 +1,4 @@
+cd("C:/Lucas_Hervier/Lucas_Hervier/Documents/Cours/3A/SFE/Dota_challenge/Project-Breezy-DOTA-Evolutionnary")
 """
 Import necessary package
 """
@@ -12,16 +13,10 @@ using Formatting
 using Dates
 using PyCall
 
-path_to_Dota_Simulator = "C:\\Lucas_Hervier\\Lucas_Hervier\\Documents\\Cours\\3A\\SFE\\Dota_challenge\\Dota_Simulator"
-pushfirst!(PyVector(pyimport("sys")."path"), path_to_Dota_Simulator)
-pyimport("DOTA_simulator")
-
-include("Julia_interface.jl")
+include("Scripts/Julia_interface.jl")
 include("MAPElites/src/MapElites.jl")
 include("Scripts/Utils.jl")
-include("Scripts/MapElitesCGPAgent.jl")
-
-
+include("Scripts/AgentMapElitesCGPModele.jl")
 
 """
 SETTINGS
