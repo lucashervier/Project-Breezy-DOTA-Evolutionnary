@@ -1,4 +1,6 @@
-## Import necessary package
+"""
+Import necessary package
+"""
 using HTTP
 using Random
 using JSON
@@ -7,11 +9,13 @@ using Cambrian
 using ArgParse
 using Sockets
 using Formatting
-include("Scripts/Evaluate.jl")
+include("MAPElites/src/MapElites.jl")
+include("Scripts/Utils.jl")
 include("Scripts/CGPAgentV0.jl")
 
-## Settings
-## Necessary settings
+"""
+SETTINGS
+"""
 s = ArgParseSettings()
 @add_arg_table! s begin
     "--breezyIp"
@@ -30,7 +34,7 @@ s = ArgParseSettings()
     help = "the initial number of games launch when the agent is started"
     arg_type = Dict{String}{Any}
     default = Dict(
-                "agent"=> "Sample Random Agent",
+                "agent"=> "CGPAgentV0",
                 "size"=> 1
             )
     "--cfg"
@@ -56,7 +60,7 @@ global breezyPort
 global agentIp
 global agentPort
 global startData
-global last_features
+global lastFeatures
 global server
 global individual
 
@@ -66,18 +70,13 @@ agentIp = args["agentIp"]
 agentPort = args["agentPort"]
 startData = args["startData"]
 # to be able to evaluate the fitness
-last_features = Dict("no_lastfeat_fornow"=>0)
+lastFeatures = []
 # the server will be reinitialize when playing Dota
 server = "whatever"
-# 
+# the individual will be properly set when calling PlayDota(ind)
 individual = "not_initialized"
-# # test of the PlayDota function
-# fitnesses = []
-# for i in 1:3
-#     fit = PlayDota()
-#     push!(fitnesses,fit)
-# end
-# println(fitnesses)
+
+
 
 e = Cambrian.Evolution(CGPInd, cfg;
                      populate=Populate,

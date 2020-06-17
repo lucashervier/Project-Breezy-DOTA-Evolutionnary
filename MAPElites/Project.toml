@@ -1,0 +1,13 @@
+name = "MAPElites"
+uuid = "5d1f05df-6d28-4d7c-83cd-2c8019c1f82d"
+authors = ["HervierLucas <lucas.hervier@student.isae-supaero.fr> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

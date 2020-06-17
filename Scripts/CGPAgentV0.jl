@@ -21,7 +21,7 @@ ServerHandler used for handling the different service:
 """
 function ServerHandler(request::HTTP.Request)
     
-    global last_features
+    global lastFeatures
     global individual
 
     path = HTTP.URIs.splitpath(request.target)
@@ -40,7 +40,7 @@ function ServerHandler(request::HTTP.Request)
         cfg["n_game"] += 1
         content = GetContent(request)
         rundata = JSON.json(content)
-        println("Fitness: $(Fitness(last_features))")
+        println("Fitness: $(Fitness(lastFeatures))")
         """
         Since the Game is over we want to close the server
         """
@@ -60,13 +60,13 @@ function ServerHandler(request::HTTP.Request)
         content = GetContent(request)       
         features = JSON.json(content)
         println(features)
-        last_features = content
+        lastFeatures = content
         # you need this conversion to call process
-        last_features = convert(Array{Float64},last_features)
+        lastFeatures = convert(Array{Float64},lastFeatures)
         """
         Agent code to determine action from features.
         """
-        action = argmax(process(individual, last_features))-1 # julia array start at 1 but breezy server is python so you need the "-1"
+        action = argmax(process(individual, lastFeatures))-1 # julia array start at 1 but breezy server is python so you need the "-1"
         println("Action made: $action")
         PostResponse(Dict("actionCode"=>action))
     end
@@ -96,7 +96,7 @@ function PlayDota(ind::CGPInd)
         HTTP.serve(ServerHandler,args["agentIp"],parse(Int64,args["agentPort"]);server=server)
     # when there is the error we know the game is over and we can return the fitness
     catch e
-        [Fitness(last_features)]
+        [Fitness(lastFeatures)]
     end
 end
 
