@@ -86,8 +86,8 @@ agentIp = args["agentIp"]
 agentPort = args["agentPort"]
 startData = args["startData"]
 # to be able to evaluate the fitness
-lastFeatures = []
-oldLastFeatures = []
+lastFeatures = [0.0]
+oldLastFeatures = [0.0]
 # the server will be reinitialize when playing Dota
 server = "whatever"
 # the individual will be properly set when calling PlayDota(ind)

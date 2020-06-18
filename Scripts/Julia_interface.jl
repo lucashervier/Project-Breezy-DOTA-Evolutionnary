@@ -15,12 +15,12 @@ This code is not of my belonging but is from the https://github.com/TemplierPaul
 It is just convenient to have it running from the Scripts folder
 """
 
-function train_sim(epochs=30, batch_size=256, limit_overfit=3, name::String ="julia_cpu_test")
+function train_sim(epochs=30, batch_size=256, limit_overfit=10, name::String ="julia_cpu_test")
     # import DOTA_simulator as dotasimlib
     sim = dotasimlib.DotaSim()
-    sim.load_data("games_data/rd_big*", true, true)
+    sim.load_data("../Dota_Simulator/games_data/rd_big*", true, true)
     print(sim)
-    sim.set_model("unet")
+    sim.set_model("ffnet",nothing,nothing,2,4000)
     sim.train(epochs=epochs, batch_size=epochs, limit_overfit=limit_overfit, plot=false)
     sim.save_model(name)
     sim
@@ -76,7 +76,7 @@ mutable struct Indiv_dist
 end
 
 function set_struct(indiv::Individual, indiv_nb::Integer, sim)
-    actions_list = run_steps(sim, indiv, 100, false)
+    actions_list = run_steps(sim, indiv, 500, true)
     Indiv_dist(indiv, zeros(indiv_nb), actions_list)
 end
 
@@ -90,6 +90,7 @@ function compute_distances(indivs::Array{Indiv_dist})
                 indiv_i = indivs[i]
                 indiv_j = indivs[j]
                 distance = sum(indiv_i.actions .!= indiv_j.actions)/len
+                println(distance)
                 indiv_i.distances[j] = distance
                 indiv_j.distances[i] = distance
             end

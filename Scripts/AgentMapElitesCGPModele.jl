@@ -143,7 +143,7 @@ function PlayDota(ind::CGPInd)
     # initialize game
     response = HTTP.post(startUrl, ["Content-Type" => "application/json"], JSON.json(startData))
     # initialize lastFeatures and oldLastFeatures
-    lastFeatures = [0.0]
+    # lastFeatures = [0.0]
     oldLastFeatures = [0.0]
     # initialize the damage variables
     totalDamageToOpp = 0
