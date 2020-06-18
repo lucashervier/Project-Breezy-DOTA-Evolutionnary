@@ -6,16 +6,15 @@ Import necessary package
 using HTTP
 using Random
 using JSON
-# using NEAT
+using NEAT
 using Cambrian
 using ArgParse
 using Sockets
 using Formatting
 using Dates
-include("MAPElites/src/MapElites.jl")
-include("Scripts/Utils.jl")
-include("Scripts/MapElitesNEATAgent.jl")
-include('NEAT.jl/NEAT.jl')
+include("../MAPElites/src/MapElites.jl")
+include("Utils.jl")
+include("MapElitesNEATAgentv0.jl")
 
 
 """
