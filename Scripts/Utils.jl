@@ -1,6 +1,6 @@
 # we import the list of our features into a dict to map array indexes
 const FEATURES_MAP = JSON.parsefile("features_list2.json")
-const TIME_TO_KILL = Dict(180.0=>1,300.0=>2,420.0=>5)
+const TIME_TO_KILL = Dict(300.0=>1)
 
 """
 Helper functions to get the fitness whatever agent you are using.
