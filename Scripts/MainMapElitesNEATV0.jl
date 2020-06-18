@@ -6,15 +6,15 @@ Import necessary package
 using HTTP
 using Random
 using JSON
-using CartesianGeneticProgramming
+using NEAT
 using Cambrian
 using ArgParse
 using Sockets
 using Formatting
 using Dates
-include("MAPElites/src/MapElites.jl")
-include("Scripts/Utils.jl")
-include("Scripts/MapElitesCGPAgent.jl")
+include("../MAPElites/src/MapElites.jl")
+include("Utils.jl")
+include("MapElitesNEATAgentv0.jl")
 
 
 """
@@ -38,12 +38,12 @@ s = ArgParseSettings()
     help = "the initial number of games launch when the agent is started"
     arg_type = Dict{String}{Any}
     default = Dict(
-                "agent"=> "MapElitesCGPAgent",
+                "agent"=> "MapElitesNEATAgent",
                 "size"=> 1
             )
     "--cfg"
     help = "configuration script"
-    default = "Config/MapElitesCGPAgent.yaml"
+    default = "Config/MapElitesNEATAgent.yaml"
 end
 
 
@@ -103,13 +103,13 @@ MappingArray = []
 featuresDim = cfg["features_dim"]
 gridMesh = cfg["grid_mesh"]
 # define the mutation
-mutation = i::CGPInd->goldman_mutate(cfg, i)
+mutation = i::NEATInd->NEAT.mutate(cfg, i)
 
 """
 MAIN LOOP
 """
 
-e = Cambrian.Evolution(CGPInd, cfg)
+e = Cambrian.Evolution(NEATInd, cfg)
 ChangeId(e)
 mapel = MAPElites.MapElites(featuresDim,gridMesh)
 MapelitesDotaRun!(e,mapel,MapIndToB;mutation=mutation,evaluate=EvaluateMapElites)
