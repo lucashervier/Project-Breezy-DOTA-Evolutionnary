@@ -1,3 +1,11 @@
+using CSV
+using DataFrames
+
+df = CSV.File("min_max_adj.csv") |> DataFrame!
+const MINS = Array{Float64}(df[!, :min])
+const MAXS = Array{Float64}(df[!, :adj_max])
+const DIFF = MAXS .- MINS
+
 """
 Helper function to get content passed with http request.
 """
@@ -101,7 +109,10 @@ function ServerHandler(request::HTTP.Request)
             """
             Agent code to determine action from features.
             """
-            action = argmax(process(individual, lastFeatures))-1 # julia array start at 1 but breezy server is python so you need the "-1"
+            inputs = (lastFeatures .- MINS) ./ DIFF
+            inputs = min.(max.(inputs, -1.0), 1.0)
+            # julia array start at 1 but breezy server is python so you need the "-1"
+            action = argmax(process(individual, inputs)) - 1
             println("Action made: $action")
             PostResponse(Dict("actionCode"=>action))
         end
